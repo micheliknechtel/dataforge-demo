@@ -3,6 +3,20 @@
 This repository holds four agent skills. If you are here to *use* them, start
 at [README.md](README.md). This file is for working *on* them.
 
+## Rehearsal safety and workspace
+
+Read [the shared workspace contract](scripts/workspace.md) before using any
+skill. `node scripts/workspace.mjs` selects the support-desk seed, even when
+Copilot opens the repository root. Never use the generic assets manifest for
+this demo. Run project commands in the reported projectRoot, and verifier
+commands by their absolute packageRoot path.
+
+All GitHub writes are restricted to the repository in
+`dataforge.workspace.json`, using `scripts/github.mjs`. Check its remote and
+manifest guard before Git writes as well. Do not create issues, labels,
+commits or PRs in either source repository. Do not deploy or approve a phase
+on the user's behalf. Do not publish agent logs, local caches or real data.
+
 ## The one rule
 
 No business-specific value belongs in `skills/`. Not a catalog name, not a
@@ -29,10 +43,10 @@ project uses.
 | `skills/<name>/SKILL.md` | The skill. The only hand-maintained packaging source. |
 | `skills/<name>/references/` | Detail loaded on demand so the main file stays readable. |
 | `assets/` | The seed manifest and its documented example. |
-| `hooks/` | Session-start hooks that load the manifest into a session. |
+| `hooks/` | Session-start hooks that check existence and notify; no manifest-content read or forge-init execution. |
 | `scripts/` | `package.mjs` (generation), `validate_contracts.py` and `leak_scan.sh` (checks). |
 | `examples/support-desk/` | The runnable DuckDB project and demo script. |
-| `.github/agents/`, `.claude-plugin/`, `.cursor-plugin/` | Generated. Never edit. |
+| `.github/agents/`, `.github/skills/`, `.claude-plugin/`, `.cursor-plugin/` | Generated. Never edit. |
 
 ## Making a change
 

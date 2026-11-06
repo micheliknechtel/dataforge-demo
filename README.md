@@ -16,10 +16,58 @@
 > [DEMO.md](examples/support-desk/DEMO.md) can build Incident live. The finished
 > result is [pull request #4](https://github.com/tewarishishir/dataforge/pull/4).
 
-[![checks](https://github.com/tewarishishir/dataforge/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/tewarishishir/dataforge/actions/workflows/checks.yml)
+[![checks](https://github.com/micheliknechtel/dataforge-demo/actions/workflows/checks.yml/badge.svg?branch=master)](https://github.com/micheliknechtel/dataforge-demo/actions/workflows/checks.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/tewarishishir/dataforge)](https://github.com/tewarishishir/dataforge/releases/tag/v0.1.0)
-[![Discussions](https://img.shields.io/github/discussions/tewarishishir/dataforge)](https://github.com/tewarishishir/dataforge/discussions)
+
+## Comece aqui (ensaio independente)
+
+Na sua maquina, em uma pasta nova:
+
+```bash
+git clone https://github.com/micheliknechtel/dataforge-demo.git
+cd dataforge-demo
+bash scripts/setup-demo.sh
+export PATH="$PWD/.tools/bin:$PATH"
+node scripts/github.mjs check
+copilot --agent forge-init
+```
+
+No Copilot, diga: **"initialize dataforge; use o projeto selecionado pelo
+workspace e pare para eu revisar o resumo"**. Depois siga o
+[roteiro em portugues](examples/support-desk/DEMO.md). O setup nao cria issues,
+labels ou PRs e nao constrói Incident. O agente exige suas revisoes nas fases.
+DuckDB usa dados ficticios locais; GitHub e Copilot exigem login e permissao.
+Se faltar autenticacao: `gh auth login --hostname github.com` e `copilot login`.
+
+O setup usa DuckDB existente no PATH ou baixa o CLI oficial **v1.4.1**, com
+SHA-256 verificado, em `.tools/bin/`; nao instala pacotes globais nem usa PyPI.
+Cada novo terminal precisa do `export PATH` acima. Reexecutar o setup preserva
+bancos existentes; `--reseed` reconstrói apenas os dois bancos sinteticos.
+Para repetir o roteiro inteiro, prefira um clone novo, sem apagar seu trabalho.
+
+Abra **a raiz do repositorio**, nao apenas `examples/support-desk`, no VS Code:
+`code .` (ou File > Open Folder). No chat do Copilot procure os agentes
+`forge-init`, `forge-builder`, `forge-dbx` e `forge-lint` no seletor de agentes.
+Os arquivos estao em `.github/agents/`; as skills em `.github/skills/`.
+Se sua versao nao mostrar os agentes, atualize a extensao ou use o CLI acima.
+O fluxo no VS Code e a plataforma Databricks nao foram executados nesta preparacao.
+
+`dataforge.workspace.json` aponta para o seed do exemplo. O resolver funciona
+na raiz e no subdiretorio; o manifest generico em `assets/` nao configura este
+ensaio. Os hooks Claude/Cursor so verificam existencia e emitem um aviso:
+**nao leem o conteudo do manifest e nao executam forge-init**.
+
+As instrucoes e pacotes originais seguem abaixo para referencia. A imagem do
+PR mostra uma execucao historica do autor, nao uma execucao desta copia.
+
+**Verificado nesta preparacao:** setup oficial isolado e sua repeticao sem
+recriar bancos existentes; duas zonas com tres tabelas de origem e seis tabelas
+Ticket cada; reconciliacao de Ticket para os tres grains; runners imprimindo
+SQL; descoberta das quatro skills pelo CLI na raiz e no exemplo; resolucao de
+caminhos, bloqueio de destinos GitHub externos, hooks e contratos existentes.
+**Nao executado:** fluxo completo do agente, criacao da issue/PR de Incident,
+deploy de Incident, VS Code ou Databricks. Esses passos ficam no seu roteiro,
+com os checkpoints humanos preservados.
 
 Four agent skills that build data pipelines, with no knowledge of your data in
 any of them.
@@ -38,12 +86,12 @@ asked for incident metrics; `forge-builder` produced
 yourself with [DEMO.md](examples/support-desk/DEMO.md).
 
 ```bash
-brew install duckdb
-cd examples/support-desk && python seed.py
+bash scripts/setup-demo.sh
+export PATH="$PWD/.tools/bin:$PATH"
 ```
 
-Then point your agent at that directory and say `initialize dataforge`. No
-cloud account, no cluster, no credentials. [DEMO.md](examples/support-desk/DEMO.md)
+Open the repository root and say `initialize dataforge`. DuckDB needs no
+cloud credentials; GitHub and Copilot require authentication. [DEMO.md](examples/support-desk/DEMO.md)
 walks the whole thing from a GitHub issue to a pull request.
 
 ## The skills
@@ -93,13 +141,13 @@ on the pull request afterward.
 The skills are plain Markdown and work with any agent that can read files.
 
 ```bash
-git clone https://github.com/tewarishishir/dataforge.git
+git clone https://github.com/micheliknechtel/dataforge-demo.git
 ```
 
 Claude Code can install from this repository directly:
 
 ```bash
-claude plugin marketplace add tewarishishir/dataforge
+claude plugin marketplace add micheliknechtel/dataforge-demo
 claude plugin install dataforge@dataforge
 ```
 
@@ -108,6 +156,7 @@ claude plugin install dataforge@dataforge
 | Claude Code | `.claude-plugin/plugin.json` |
 | Cursor | `.cursor-plugin/plugin.json` |
 | GitHub Copilot | `.github/agents/*.agent.md` |
+| Copilot project skills | `.github/skills/*/SKILL.md` |
 
 The agent packages and `.claude-plugin/marketplace.json` are generated from
 `skills/*/SKILL.md` by `node scripts/package.mjs`. CI fails if they drift, so
@@ -123,6 +172,6 @@ are exercised by the example project rather than by production use.
 - [Contributing](CONTRIBUTING.md)
 - [Adopters](ADOPTERS.md)
 - [Cite this project](CITATION.cff)
-- [Discussions](https://github.com/tewarishishir/dataforge/discussions)
+- [Issues do ensaio](https://github.com/micheliknechtel/dataforge-demo/issues)
 
 MIT licensed.

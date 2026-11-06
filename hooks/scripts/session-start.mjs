@@ -19,11 +19,13 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { resolveWorkspace } from "../../scripts/workspace.mjs";
 
 // ---------------------------------------------------------------------------
 // Resolve workspace root from CWD (Cursor sets CWD to workspace root for hooks)
 // ---------------------------------------------------------------------------
-const workspaceRoot = process.cwd();
+const context = resolveWorkspace();
+const workspaceRoot = context?.projectRoot ?? process.cwd();
 
 // ---------------------------------------------------------------------------
 // Daily cache — keyed by workspace path so each project is tracked separately
@@ -54,17 +56,8 @@ if (!forceRun) {
 // ---------------------------------------------------------------------------
 // Probe manifest existence (no reads of contents)
 // ---------------------------------------------------------------------------
-const candidatePaths = [
-  join(workspaceRoot, "assets", "dataforge.manifest.yaml"),
-  join(workspaceRoot, "dataforge.manifest.yaml"),
-];
-const resolvedPaths = [
-  join(workspaceRoot, "assets", "dataforge.manifest.resolved.yaml"),
-  join(workspaceRoot, "dataforge.manifest.resolved.yaml"),
-];
-
-const hasSeed = candidatePaths.some(existsSync);
-const hasResolved = resolvedPaths.some(existsSync);
+const hasSeed = context !== null;
+const hasResolved = context?.hasResolved ?? false;
 
 // ---------------------------------------------------------------------------
 // Emit context message

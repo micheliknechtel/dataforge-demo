@@ -1,6 +1,8 @@
 # Phase 2 Data Discovery Reference
 
-Loaded at Phase 2 entry. Contains the mandatory 5-query sequence, query failure halt protocols, source table lookup patterns, grain feasibility rules, domain placement, Hypothesis Resolution Log, and Discovery Presentation Gate. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml`.
+Loaded at Phase 2 entry. Contains the mandatory 5-query sequence, failure
+protocols, grain feasibility and discovery gates. All project-specific values
+come from `context.resolved` per the shared workspace contract.
 
 ---
 

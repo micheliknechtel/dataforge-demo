@@ -1,6 +1,8 @@
 # Phase 4 Schema Architecture Reference
 
-Loaded at Phase 4 entry. Contains schema DDL generation procedures, file naming conventions, entity folder structure, ALTER script strategy, and grain-specific patterns. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml`.
+Loaded at Phase 4 entry. Contains DDL generation, file naming, entity layout
+and ALTER procedures. Values come from `context.resolved` per the shared
+workspace contract.
 
 For the actual DDL templates and SQL syntax, load the framework-specific code template: [code-templates/spark_python.md](code-templates/spark_python.md) or [code-templates/dbt.md](code-templates/dbt.md) based on `manifest.platform.pipeline_framework`.
 

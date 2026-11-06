@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import pathlib
 import random
 import shutil
@@ -177,9 +178,9 @@ ORDER BY {group_cols};"""
     return "\n".join(inserts)
 
 
-def run_sql(db: pathlib.Path, sql: str) -> str:
+def run_sql(db: pathlib.Path, sql: str, json_output: bool = False) -> str:
     result = subprocess.run(
-        ["duckdb", str(db), "-c", sql],
+        ["duckdb", str(db), *(["-json"] if json_output else []), "-c", sql],
         capture_output=True,
         text=True,
     )
@@ -210,12 +211,31 @@ def build() -> None:
         print(counts.rstrip())
 
 
-def check() -> None:
+def check(initial: bool = False) -> None:
     missing = [z for z in ZONES if not (WAREHOUSE / f"{z}.duckdb").exists()]
     if missing:
         sys.exit(f"missing zone files: {', '.join(missing)}. Run: python seed.py")
     for zone in ZONES:
         db = WAREHOUSE / f"{zone}.duckdb"
+        result = subprocess.run(
+            ["duckdb", str(db), "-readonly", "-json", "-c",
+             "SELECT table_schema, table_name FROM information_schema.tables;"],
+            capture_output=True, text=True, check=True,
+        )
+        inventory = {(row["table_schema"], row["table_name"])
+                     for row in json.loads(result.stdout)}
+        expected = {(SOURCE_SCHEMA, f"{entity}s") for entity in ENTITIES}
+        expected.update((TARGET_SCHEMA, f"Ticket_{grain.title()}_Metrics_Snapshot_{cadence}")
+                        for grain in GRAINS for cadence in CADENCES)
+        absent = expected - inventory
+        if absent:
+            sys.exit(f"{zone}: missing expected tables: {sorted(absent)}")
+        if initial and inventory != expected:
+            sys.exit(f"{zone}: not the initial rehearsal state: {sorted(inventory - expected)}")
+        for entity in ENTITIES:
+            count = json.loads(run_sql(db, f"SELECT COUNT(*) AS n FROM {SOURCE_SCHEMA}.{entity}s;", json_output=True))[0]["n"]
+            if count == 0:
+                sys.exit(f"{zone}: empty synthetic source table {entity}s; rebuild the seed")
         out = run_sql(db, "SELECT table_schema, COUNT(*) FROM information_schema.tables GROUP BY 1 ORDER BY 1;")
         print(f"{zone}:\n{out.rstrip()}")
 
@@ -223,4 +243,8 @@ def check() -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="verify instead of rebuild")
-    check() if parser.parse_args().check else build()
+    parser.add_argument("--initial", action="store_true", help="with --check, require the unbuilt starting state")
+    args = parser.parse_args()
+    if args.initial and not args.check:
+        parser.error("--initial requires --check")
+    check(initial=args.initial) if args.check else build()

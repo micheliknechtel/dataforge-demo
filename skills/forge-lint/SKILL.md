@@ -10,7 +10,7 @@ description: >-
   "help me fix this pipeline", "pipeline error".
 metadata:
   status: "beta"
-  agent-tools: [read, search, edit]
+  agent-tools: [read, search, edit, runCommands]
   human-description: Enforces naming, SQL formatting, and safety rules for metric pipelines, checked automatically whenever pipeline code or schema files change.
 ---
 
@@ -18,7 +18,12 @@ metadata:
 
 forge-lint is the standards gate. It defines what correct looks like. It does not build, deploy, or discover.
 
-Read the resolved manifest before applying any rule. Check for `../../assets/dataforge.manifest.resolved.yaml` first; if missing or stale (seed `../../assets/dataforge.manifest.yaml` has a newer modification time), invoke [forge-init](../forge-init/SKILL.md) to regenerate it. If the seed `../../assets/dataforge.manifest.yaml` contains legacy full-manifest keys (e.g., `catalogs`, `domains`), read it directly as a pre-resolved manifest. If neither resolved nor seed exists, STOP and report. All project-specific values (naming, catalogs, grains, domains, orchestration, runner, spark_conf, downstream) are resolved from the manifest. User rules for source-based development, comprehensive lookups, logic preservation, code order, comment style, sequential work, current dates, consistent patterns, exact references, and auto-apply all remain in effect.
+Read the [workspace contract](../../scripts/workspace.md) and run its resolver
+before applying any rule. Read `context.resolved`; if missing or stale against
+`context.seed`, invoke [forge-init](../forge-init/SKILL.md). A legacy full seed
+may be read directly. If neither exists, STOP and report. All project-specific
+values are resolved from the selected manifest, never the generic assets example.
+Existing user rules and human approval gates remain in effect.
 
 ---
 

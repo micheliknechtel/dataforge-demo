@@ -1,149 +1,174 @@
-# Scripted demo: GitHub issue to pull request
+# Roteiro: de uma issue GitHub a um pull request
 
-A full `forge-builder` run against local DuckDB. No cloud account, no cluster,
-no credentials. Takes about fifteen minutes end to end at a conversational
-pace; the setup below takes under a minute.
+Reproducao independente do roteiro da palestra, importado no commit
+`2cf8ee86934bbced1217b47f9690b89c4bd4989a` de
+`githubevents/build-once-run-on-any-agent`, pasta `demos/dataforge`.
+O historico Git preserva a copia original, a licenca MIT e a autoria de
+Shishir Tewari. Toda operacao do ensaio deve apontar exclusivamente para
+**micheliknechtel/dataforge-demo**, nunca para os repositorios de origem.
 
-The thing worth watching is not that an agent wrote SQL. It is that four
-skills, none of which contain a single support-desk noun, produce
-support-desk-correct code — because everything they need to know about this
-business is in one resolved manifest.
+O objetivo nao e apenas gerar SQL: quatro skills genericas aprendem o contexto
+do negocio por um manifest resolvido. Ticket ja existe como referencia;
+Incident sera construido ao vivo, e Release fica fora do escopo.
+Reserve aproximadamente quinze minutos para o roteiro, alem de instalacao,
+autenticacao e revisoes; a duracao do agente pode variar.
 
-## Setup
+## Preparacao
+
+Na raiz de um clone novo:
 
 ```bash
-brew install duckdb                       # or see duckdb.org/docs/installation
-cd examples/support-desk
-python seed.py                            # builds warehouse/zone1.duckdb and zone2.duckdb
+bash scripts/setup-demo.sh
+export PATH="$PWD/.tools/bin:$PATH"
+node scripts/github.mjs check
+python3 examples/support-desk/seed.py --check --initial
+copilot skill list
+copilot --agent forge-init
 ```
 
-Point your agent at this directory. `hooks/scripts/session-start.mjs` finds
-`dataforge.manifest.yaml` and loads it into the session automatically.
+O setup cria `warehouse/zone1.duckdb` e `zone2.duckdb` no exemplo com dados
+ficticios. Nao cria issues, labels, PRs nem executa o deploy de Incident.
+DuckDB nao precisa de conta de nuvem; GitHub e Copilot precisam de login e
+permissoes. Resolva falhas de autenticacao antes de continuar.
 
-## Act 1 — Cold start
+Abra a **raiz do repo** no Copilot ou VS Code, como explicado no README.
+`node scripts/workspace.mjs` deve apontar para o seed em
+`examples/support-desk/dataforge.manifest.yaml`, nao para `assets/`.
+Comandos de warehouse e runners usam `examples/support-desk` como CWD;
+skills, referencias e `.build-state/` pertencem a raiz do pacote.
+O verifier deve ser invocado por caminho absoluto a partir do CWD do projeto.
 
-> initialize dataforge
+Os hooks Claude/Cursor apenas verificam a existencia dos manifests e emitem um
+aviso; nao leem seu conteudo e nao executam `forge-init`.
+No Copilot, selecione ou invoque a skill/agente explicitamente.
 
-`forge-init` runs. It reads eight lines of seed manifest, then discovers
-everything else:
+## Ato 1 - Inicio sem configuracao resolvida
 
-| Discovered from | What it learns |
+Diga ao `forge-init`:
+
+> initialize dataforge; use o projeto selecionado pelo workspace e pare para eu revisar o resumo
+
+Ele le o seed do projeto e descobre:
+
+| Fonte | O que aprende |
 | --- | --- |
-| `warehouse/*.duckdb` | two zones, deployment order `zone1` then `zone2` |
-| `information_schema` | three source tables, their columns and types |
-| `support_metric_store/` tree | one domain, three entities, one of them built |
-| `Schema/*.sql` filenames | three grains, two cadences, the table name pattern |
-| `Code/*.py` contents | the metric grammar `total_{entity}_{verb}_count` |
-| `common/config.py` | the injected globals the runners provide |
+| `warehouse/*.duckdb` | Duas zonas, ordem zone1 e depois zone2 |
+| `information_schema` | Tres tabelas de origem e seus tipos |
+| `support_metric_store/` | Dominio service_delivery; Ticket ja implementado |
+| `Ticket/Schema/*.sql` | Tres grains: Account, Workspace, User; Daily e Cumulative |
+| `Ticket/Code/*.py` | Gramatica `total_{entity}_{verb}_count` e padrao de pipelines |
+| `common/config.py` | Globais injetados pelos runners |
 
-Output is `dataforge.manifest.resolved.yaml`. Open it on stage. Every
-support-desk-specific fact in the entire system is in that one file, and
-almost none of it was typed by a human.
+O override do seed acrescenta `resolve` aos verbos aprendidos de Ticket.
+O resultado e `examples/support-desk/dataforge.manifest.resolved.yaml`.
+Abra o arquivo e confira repositorio, caminhos, catalogos, grains e zonas;
+so confirme o resumo quando estiver correto. O seed e a fonte persistente;
+correcoes entram em `overrides`, nao no arquivo gerado.
 
-Then say the quiet part: `orchestration` comes back marked
-engine-unsupported, because DuckDB has no job scheduler. The skill reports the
-gap instead of inventing a scheduler that does not exist.
+Explique: `orchestration.supported` e false porque DuckDB nao tem scheduler.
+O agente registra a limitacao em vez de inventar jobs.
 
-## Act 2 — Intake
+## Ato 2 - Intake da sua propria issue
+
+Revise primeiro `issues/incident-metrics.md`; ele mantem o pedido vago
+intencionalmente. Os comandos abaixo sao para **voce executar no ensaio**:
 
 ```bash
-# metric-request is not one of GitHub's default labels, so create it first.
-# --force makes this safe to re-run between rehearsals.
-gh label create metric-request --color 0E8A16 \
+cd examples/support-desk
+node ../../scripts/github.mjs check
+node ../../scripts/github.mjs label create metric-request --color 0E8A16 \
   --description "Request for a new metric build" --force
-
-gh issue create --title "Add incident lifecycle metrics" \
+node ../../scripts/github.mjs issue create --title "Add incident lifecycle metrics" \
   --body-file issues/incident-metrics.md --label metric-request
 ```
 
-> build the metrics in issue #N
+O wrapper confere seed, manifest resolvido e remoto e acrescenta
+`--repo micheliknechtel/dataforge-demo`. Ele nao substitui login nem permissoes.
+O equivalente sem wrapper exige destino explicito, por exemplo:
+`gh issue view N --repo micheliknechtel/dataforge-demo`.
 
-Use the issue number that `gh issue create` just printed — on a fresh repository
-it will be `#1`. `forge-builder` Phase 1 reads the issue with `gh issue view`. The issue is
-vague on purpose — it never says which grains, which verbs, which cadences, or
-what to do about soft-deleted rows. Phase 1 proposes defaults drawn from the
-resolved manifest and asks you to confirm the rest. This is the first
-checkpoint of seven.
+No Copilot aberto na raiz, selecione `forge-builder` e diga:
 
-## Act 3 — Discovery and design
+> build the metrics in issue #N; use somente o repositorio configurado e preserve todos os checkpoints humanos
 
-Phases 2 and 3. `forge-builder` delegates every query to `forge-dbx`, which
-sees `engine: duckdb` and shells out to the `duckdb` CLI. Profiling
-`demo_gold_source_a.incidents` establishes that `account_id`, `workspace_id`,
-and `user_id` are all populated, so all three grains are viable.
+Use o numero realmente retornado, nao assuma #1. O agente consulta a issue,
+propoe defaults do manifest e pede confirmacao de grains, verbos, cadencias e
+tratamento de soft-delete. Esse e o primeiro de sete checkpoints.
 
-Worth pausing on: the Raw Data Egress Policy in `forge-dbx` refuses row-level
-`SELECT *` even here, against synthetic data on your own laptop. It is a
-dataforge rule, not a platform restriction, so it does not relax when the
-platform does.
+## Ato 3 - Descoberta e desenho
 
-Phase 3 names the metrics. `forge-lint` supplies the grammar and rejects
-anything that does not fit it. `total_incident_create_count` and
-`total_incident_resolve_count` survive; `incident_count` and
-`num_incidents_opened` do not.
+Nas fases 2 e 3, `forge-builder` usa `forge-dbx` para consultar DuckDB.
+O profiling agregado de `demo_gold_source_a.incidents` verifica os IDs de
+Account, Workspace e User. A politica de egress proibe extracao de linhas
+brutas, inclusive com dados sinteticos; mostre metadados e agregacoes.
 
-## Act 4 — Codegen
+`forge-lint` valida a gramatica. `total_incident_create_count` e
+`total_incident_resolve_count` seguem o padrao; `incident_count` e
+`num_incidents_opened` nao. Revise as definicoes e confirme o desenho antes
+de permitir engenharia.
 
-Phases 4 and 5 write six `Schema/*.sql` files and two `Code/*.py` pipelines
-into `support_metric_store/service_delivery/Incident/`. Diff them against the
-`Ticket/` folder: same structure, same system columns, same runner contract.
-Nothing told the agent that shape — `forge-init` read it out of the existing
-code in Act 1.
+## Ato 4 - Geracao de codigo
 
-`verify.py` runs as a hook after each phase and blocks the checkpoint if a
-declared metric has no matching artifact.
+As fases 4 e 5 geram seis arquivos `Schema/*.sql` e dois `Code/*.py`
+em `support_metric_store/service_delivery/Incident/`. Compare com Ticket:
+mesma estrutura, colunas de sistema e contrato de runner.
+O agente executa `skills/forge-builder/verify.py` da raiz do pacote, mantendo
+o projeto como CWD, nos limites de fase e checkpoints.
 
-The runners only ever print SQL; nothing executes until `forge-dbx` is called.
-That split is worth showing, because it is what makes generated pipeline code
-reviewable before it touches a warehouse:
+Os runners **imprimem SQL**, nao o executam. No CWD do exemplo:
 
 ```bash
 python3 support_metric_store/common/daily_runner.py \
   support_metric_store/service_delivery/Incident/Code/Incident_Metrics_Snapshot_Daily.py
 ```
 
-## Act 5 — Tests and deploy
+Se faltarem artefatos ou checkpoints, corrija antes de seguir. Nao aceite
+evidencia inventada, nem continue porque o agente apenas disse "passou".
 
-Phase 6 writes `Code/__incident_test.sql` and runs it through `forge-dbx`.
-Phase 7 deploys, and this is where the two zone files earn their keep: DDL
-applies to `zone1` first, and only after it succeeds does `zone2` run. The
-sequential, stop-on-first-failure loop is the same code path a real
-multi-region rollout takes.
+## Ato 5 - Testes e deploy aprovado
 
-Guardrail S5 fires before any of it: the agent prints all six DDL files and
-stops until you approve. Say yes on stage — that pause is the point.
+A fase 6 gera `Code/__incident_test.sql` e o executa via `forge-dbx`.
+Na fase 7, o guardrail S5 exige mostrar **todo o SQL das seis DDLs** e parar.
+O deploy so pode ocorrer depois da sua aprovacao explicita desse SQL.
+Zone1 deve terminar com sucesso antes de iniciar zone2; falha interrompe tudo.
 
-Loading one snapshot date would only prove the pipeline runs. Backfill the
-last thirty days instead, so the store holds a series and both metrics are
-visible. The loop is the whole execution contract in four lines — the runner
-emits SQL, `duckdb` executes it, once per date per zone:
+**Somente depois dessa aprovacao e da criacao validada das tabelas**, o
+backfill abaixo carrega trinta dias. Ele demonstra o contrato runner -> SQL ->
+DuckDB por data e por zona. Execute em Bash, no CWD do exemplo:
 
 ```bash
+set -euo pipefail
 for zone in zone1 zone2; do
   for i in $(seq 30 -1 1); do
-    SNAP=$(python3 -c "import datetime as dt,sys;print(dt.date.today()-dt.timedelta(days=int(sys.argv[1])))" $i)
-    SOURCE_ZONE=$zone SNAPSHOT_DATE=$SNAP python3 support_metric_store/common/daily_runner.py \
+    SNAP=$(python3 -c "import datetime as dt,sys;print(dt.date.today()-dt.timedelta(days=int(sys.argv[1])))" "$i")
+    SOURCE_ZONE="$zone" SNAPSHOT_DATE="$SNAP" python3 support_metric_store/common/daily_runner.py \
       support_metric_store/service_delivery/Incident/Code/Incident_Metrics_Snapshot_Daily.py \
       | duckdb "warehouse/$zone.duckdb"
-    SOURCE_ZONE=$zone SNAPSHOT_DATE=$SNAP python3 support_metric_store/common/cumulative_runner.py \
+    SOURCE_ZONE="$zone" SNAPSHOT_DATE="$SNAP" python3 support_metric_store/common/cumulative_runner.py \
       support_metric_store/service_delivery/Incident/Code/Incident_Metrics_Snapshot_Cumulative.py \
       | duckdb "warehouse/$zone.duckdb"
   done
 done
 ```
 
-Both metrics now have rows, the new verb among them:
+Veja os dois nomes de metricas com agregacoes, em ambas as zonas:
 
 ```bash
-duckdb warehouse/zone1.duckdb -c "SELECT metric_name, COUNT(*) AS rows, SUM(metric_value) AS total FROM demo_gold_support_metric_store.Incident_Account_Metrics_Snapshot_Daily GROUP BY 1 ORDER BY 1"
+for zone in zone1 zone2; do
+  duckdb "warehouse/$zone.duckdb" -readonly -c "
+SELECT metric_name, COUNT(*) AS rows, SUM(metric_value) AS total
+FROM demo_gold_support_metric_store.Incident_Account_Metrics_Snapshot_Daily
+GROUP BY 1 ORDER BY 1;"
+done
 ```
 
-The stronger claim is that the store agrees with the source exactly. The
-cumulative snapshot for the latest date should reproduce a direct count over
-all 120 days of source data — no approximation, no drift:
+Depois compare o Cumulative mais recente com contagens diretas da origem.
+Os totais devem concordar exatamente, excluindo `is_deleted = true`.
+O seed contem 120 dias, e o ultimo snapshot do backfill e ontem.
+Confirme no desenho se "resolve" exige status resolved, closed_at ou ambos.
 
 ```bash
-duckdb warehouse/zone1.duckdb -c "
+duckdb warehouse/zone1.duckdb -readonly -c "
 SELECT metric_name, SUM(metric_value) AS metric_store_says
 FROM demo_gold_support_metric_store.Incident_Account_Metrics_Snapshot_Cumulative
 WHERE SNAPSHOT_DATE = (SELECT MAX(SNAPSHOT_DATE) FROM demo_gold_support_metric_store.Incident_Account_Metrics_Snapshot_Cumulative)
@@ -152,27 +177,31 @@ SELECT COUNT(*) AS source_created, COUNT(*) FILTER (WHERE status = 'resolved') A
 FROM demo_gold_source_a.incidents WHERE is_deleted = false;"
 ```
 
-Then `gh pr create`, with the issue linked and the entity README updated.
+Repita em zone2. Atualize o README da entidade e revise o diff. O agente cria
+uma branch de ensaio e um PR **no seu repo**, usando o default branch consultado
+(`master` nesta copia), com `Closes #N` no corpo. Nao crie PRs no upstream.
+No worktree do app, mantenha a branch atribuida pelo app.
 
-## The closing move
+## Fechamento - O que mudar o engine significa
 
-Open `dataforge.manifest.yaml` and change one line:
+Mostrar `platform.engine: "databricks"` explica a selecao de outro adaptador,
+nao uma migracao completa. Databricks ainda exige CLI, credenciais/perfis,
+catalogos/dados adequados e validacao do ambiente. Nada disso foi executado
+nesta preparacao. Mantenha `duckdb` para repetir o ensaio local.
 
-```yaml
-platform:
-  engine: "databricks"
-```
+## Repetir sem apagar seu trabalho
 
-Nothing else in the repository changes. Not a skill, not a phase, not a hook.
-That line is the entire porting cost, and it is also the reason this code
-could be open-sourced at all: sanitizing it for release was find-and-replace
-on examples, because the business context was never in the skills to begin
-with.
+Para um roteiro inteiro novo, use outro clone em uma pasta nova e rode o setup.
+As issues e PRs existentes continuam no GitHub; use os novos numeros ou revise
+uma issue anterior. Nao e necessario apagar nada no upstream.
 
-## Reset
+Se quiser apenas reconstruir os dados sinteticos deste clone:
 
 ```bash
-python seed.py                            # rebuild both zone files from scratch
-git clean -fd support_metric_store/service_delivery/Incident
-rm -f dataforge.manifest.resolved.yaml .build-state/*
+# Na raiz; descarta SOMENTE os dois bancos locais gerados.
+bash scripts/setup-demo.sh --reseed
 ```
+
+Isso nao remove codigo Incident, manifest resolvido nem checkpoints.
+Para preservar um ensaio parcial e voltar ao estado inicial de codigo, prefira
+outro clone. Nao use git clean, reset amplo ou remocao generica de .build-state.

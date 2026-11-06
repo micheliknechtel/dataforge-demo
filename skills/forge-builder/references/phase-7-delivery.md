@@ -1,6 +1,8 @@
 # Phase 7 Delivery Reference
 
-Loaded at Phase 7 entry alongside [phase-7-deployment-playbook.md](phase-7-deployment-playbook.md). Contains documentation update procedures, the delivery summary template, and the post-deployment monitoring baseline. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml`.
+Loaded at Phase 7 entry alongside [phase-7-deployment-playbook.md](phase-7-deployment-playbook.md).
+Contains documentation, delivery and monitoring procedures. Values come from
+`context.resolved` per the shared workspace contract.
 
 ---
 

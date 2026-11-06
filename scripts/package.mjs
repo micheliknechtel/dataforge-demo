@@ -30,7 +30,7 @@ const PACKAGE = {
   author: {
     name: "Shishir Tewari",
   },
-  repository: "https://github.com/tewarishishir/dataforge",
+  repository: "https://github.com/micheliknechtel/dataforge-demo",
   keywords: [
     "dataforge",
     "data-platform",
@@ -132,10 +132,10 @@ function posixNormalize(path) {
  * Rewrite links that are relative to the skill directory so they resolve from
  * the repository root, which is where a Copilot agent file is read from.
  */
-function rehomeLinks(body, name) {
+function rehomeLinks(body, name, prefix = "../../") {
   return body.replace(/\]\((?!https?:|#|\/)([^)]+)\)/g, (whole, target) => {
     const [path, anchor = ""] = target.split(/(#.*)$/);
-    return `](${posixNormalize(`skills/${name}/${path}`)}${anchor})`;
+    return `](${prefix}${posixNormalize(`skills/${name}/${path}`)}${anchor})`;
   });
 }
 
@@ -160,7 +160,7 @@ function pluginManifest(version, { skills, hooks }) {
 }
 
 /**
- * Catalog so `claude plugin marketplace add tewarishishir/dataforge` works before
+ * Catalog so `claude plugin marketplace add micheliknechtel/dataforge-demo` works before
  * the plugin is accepted into Anthropic's directory. The plugin entry omits
  * `version`: plugin.json is the authority, and a second copy here would mask
  * it. The catalog-level version still tracks skill_version so this file
@@ -198,6 +198,11 @@ function build() {
 
   for (const skill of skills) {
     outputs.set(join(".github", "agents", `${skill.name}.agent.md`), copilotAgent(skill));
+    const source = readFileSync(join(SKILLS_DIR, skill.name, "SKILL.md"), "utf8");
+    outputs.set(
+      join(".github", "skills", skill.name, "SKILL.md"),
+      rehomeLinks(source, skill.name, "../../../"),
+    );
   }
   outputs.set(
     join(".claude-plugin", "plugin.json"),

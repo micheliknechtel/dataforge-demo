@@ -44,7 +44,11 @@ Key syntax differences:
 
 ## Step 1: Read Manifest
 
-Read `../../assets/dataforge.manifest.resolved.yaml` (relative to this SKILL.md) to load project-specific configuration. If the resolved manifest does not exist, or if the seed `../../assets/dataforge.manifest.yaml` has a newer modification time, invoke [forge-init](../forge-init/SKILL.md) to regenerate it before proceeding. If the seed contains legacy full-manifest keys (e.g., `catalogs`, `domains`), read it directly as a pre-resolved manifest. Extract these sections:
+Read the [workspace contract](../../scripts/workspace.md) and run its resolver.
+Read `context.resolved` for configuration, invoking [forge-init](../forge-init/SKILL.md)
+if missing or stale against `context.seed`. A legacy full seed can be read
+directly. Run database commands from `context.projectRoot` so relative zone
+paths select existing databases, never newly created empty files. Extract:
 
 ### Zones and Profiles
 

@@ -9,19 +9,22 @@ Because it exists, no other skill needs to know a single catalog name, domain, o
 forge-init ships as part of dataforge:
 
 ```bash
-git clone https://github.com/OWNER/dataforge.git
-cd dataforge && node scripts/package.mjs
+git clone https://github.com/micheliknechtel/dataforge-demo.git
+cd dataforge-demo && node scripts/package.mjs
 ```
 
 See the [repository README](../../README.md) for how to point Claude Code, Cursor, or GitHub Copilot at the generated packages.
 
 ## What it does
 
-Instead of hand-authoring a config file with every catalog name, job name, and naming pattern in the project, you write a handful of required fields (project name, store name, platform engine, pipeline framework) in `assets/dataforge.manifest.yaml`.
+Instead of hand-authoring every catalog and job, supply the selected project
+seed. [The workspace contract](../../scripts/workspace.md) resolves its path;
+the generic assets example is not the support-desk configuration.
 forge-init reads that seed and does the rest by querying the platform CLI and scanning the codebase: it lists zones and profiles, discovers catalogs and classifies them as source or target, reads table schemas to infer grain definitions, matches job names to their store prefix, and walks the directory tree to infer domains, entity structure, and column naming conventions.
 
 You can trigger it directly ("initialize dataforge", "resolve manifest"), but most of the time you never call it by name.
-Every other skill checks whether `assets/dataforge.manifest.resolved.yaml` exists and is newer than the seed before it does anything else, and invokes forge-init automatically if it is missing or stale.
+Every other skill checks the resolved file paired with that selected seed,
+invoking forge-init if it is missing or stale.
 
 ## What to expect
 
@@ -36,8 +39,10 @@ Corrections go into the `overrides` section of the seed file, not the resolved m
 
 ## Output
 
-forge-init writes the full configuration to `assets/dataforge.manifest.resolved.yaml`, alongside the seed, with a header noting it is auto-generated and should not be hand-edited.
-If Tier 1 fields in the seed were missing and you supplied them interactively, it also updates `assets/dataforge.manifest.yaml` with the resolved values.
+forge-init writes the resolved configuration beside the selected seed:
+`examples/support-desk/dataforge.manifest.resolved.yaml` in this rehearsal.
+Its header identifies the seed and checksum. If required seed values are
+supplied interactively, update only that selected seed.
 Neither file is committed automatically; that stays your call.
 
 ## Related skills

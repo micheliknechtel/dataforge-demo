@@ -16,12 +16,12 @@ project:
   name: "support-desk"
   store_name: "support_metric_store"
 
-  # Null means gh operates on whatever repository the working directory is in.
-  repository: null
+  # GitHub operations belong exclusively to this independent rehearsal.
+  repository: "micheliknechtel/dataforge-demo"
 
 platform:
   # The whole point of the example: duckdb needs no account and no cluster.
-  # Switch this to "databricks" and nothing else in the skills changes.
+  # Databricks selects another adapter, requiring its own tools and credentials.
   engine: "duckdb"
 
   pipeline_framework: "spark_python"

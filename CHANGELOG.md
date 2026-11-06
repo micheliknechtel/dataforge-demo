@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Independent rehearsal - 2026-11-06
+
+- Imported all of the talk's `demos/dataforge` at commit
+  `2cf8ee86934bbced1217b47f9690b89c4bd4989a`, preserving MIT license and author.
+- Added a Portuguese rehearsal, explicit own-repository targeting and a
+  fail-closed GitHub wrapper. No upstream writes are part of this rehearsal.
+- Selected the example seed via a shared workspace resolver used by all four
+  skills and both hooks. Paired resolved manifests cannot come from another
+  project. Corrected hook documentation: notifications, not initialization.
+- Generated Copilot project skills and file-relative links from the existing
+  canonical skills; kept Claude/Cursor packages and author attribution.
+- Added isolated, checksum-verified official DuckDB setup, initial-state and
+  reconciliation checks, and repeat instructions without destructive resets.
+- Preserved human phase/deployment gates. VS Code and Databricks execution are
+  not claimed by the local setup checks.
+
 ### Changed
 
 - The CI workflow file is now `.github/workflows/checks.yml`, matching its

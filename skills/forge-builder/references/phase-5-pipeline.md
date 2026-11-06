@@ -1,6 +1,8 @@
 # Phase 5 Pipeline Code Reference
 
-Loaded at Phase 5 entry. Contains pipeline code generation procedures, file generation order, dry-run validation protocol, job definition wiring, and multi-source integration patterns. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml`.
+Loaded at Phase 5 entry. Contains generation order, dry-run validation,
+job wiring and multi-source integration. Values come from `context.resolved`
+per the shared workspace contract.
 
 For the actual Python and SQL templates, load the framework-specific code template: [code-templates/spark_python.md](code-templates/spark_python.md) or [code-templates/dbt.md](code-templates/dbt.md) based on `manifest.platform.pipeline_framework`.
 

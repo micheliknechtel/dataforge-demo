@@ -12,20 +12,23 @@ issue-NNNN-short-description
 
 - `NNNN`: Source issue number (from Mode A) or newly created issue number (Mode B/C/D)
 - `short-description`: Kebab-case, 3-5 words max (e.g., `add-incident-metrics`, `release-entity-pipeline`)
-- Branch from `main`, always
+- Query `gh repo view <REPOSITORY> --json defaultBranchRef` and use that branch.
+- Run the workspace GitHub guard before Git writes; never push to an upstream.
+- In an app-managed worktree, stay on its assigned feature branch. Do not switch
+  a shared checkout or rename branches with raw Git.
 
 ### Git Commands (PowerShell-safe)
 
 ```powershell
-git fetch origin main
-git checkout main
-git pull origin main
-git checkout -b issue-{NUMBER}-short-description
+git fetch origin <DEFAULT_BRANCH>
+# On a normal clone (not an app-managed worktree), create an issue branch:
+git switch -c issue-{NUMBER}-short-description origin/<DEFAULT_BRANCH>
 ```
 
 **Never** use `&&` in PowerShell. Chain with `;` if sequential, or run as separate commands.
 
-**Stale main check:** After `git pull`, compare `git rev-parse HEAD` with `git rev-parse origin/main`. If they differ, the local main has diverged from remote. Abort and ask the user to reconcile before branching.
+**Base check:** Confirm the selected default branch and local changes before
+branching. Do not reset or overwrite a dirty checkout.
 
 After making changes:
 
@@ -48,7 +51,7 @@ Write the PR body to a temp file first (never inline `--body` in PowerShell):
 # File: .forge/pr-body-temp.md
 
 # 2. Create PR via gh CLI
-gh pr create --title "Add {entity} metrics" --body-file .forge/pr-body-temp.md
+gh pr create --repo <REPOSITORY> --base <DEFAULT_BRANCH> --head <FEATURE_BRANCH> --title "Add {entity} metrics" --body-file .forge/pr-body-temp.md
 
 # 3. Delete the temp file after PR creation
 ```
@@ -215,5 +218,5 @@ RESTORE TABLE {target_catalog_pattern}.{domain}.{table_name} TO VERSION AS OF {v
 After successful deployment across all zones:
 
 1. **Add closing comment** to the source issue (see [phase-1-issue-intake.md](phase-1-issue-intake.md) Deployment Summary template)
-2. **Close the issue:** `gh issue close {NUMBER} --comment "<completion note>"`. When the PR body contains `Closes #{NUMBER}`, merging the PR closes it automatically — verify rather than closing twice.
+2. **Close the issue:** `gh issue close {NUMBER} --repo <REPOSITORY> --comment "<completion note>"`. When the PR body contains `Closes #{NUMBER}`, merging the PR closes it automatically — verify rather than closing twice.
 3. **Close follow-up issues** opened during Phase 7

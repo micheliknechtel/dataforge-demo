@@ -10,14 +10,15 @@ is the most useful contribution a new user can make.
 
 ## Questions and ideas
 
-Ask in [Discussions](https://github.com/tewarishishir/dataforge/discussions)
-before writing a large change, so we can agree on the shape first. Bugs go in
-[Issues](https://github.com/tewarishishir/dataforge/issues).
+This is an independent rehearsal copy, not the upstream development project.
+Questions and bugs about this rehearsal go in
+[its own issues](https://github.com/micheliknechtel/dataforge-demo/issues).
+Do not open upstream issues or PRs as part of the demo.
 
 ## Changing a skill
 
 1. Edit `skills/<name>/SKILL.md` or a file under its `references/`.
-2. Do not edit `.github/agents/`, `.claude-plugin/`, or `.cursor-plugin/` by
+2. Do not edit `.github/agents/`, `.github/skills/`, `.claude-plugin/`, or `.cursor-plugin/` by
    hand. Run `node scripts/package.mjs` and commit what it regenerates.
 3. Run `scripts/leak_scan.sh`.
 4. Update [CHANGELOG.md](CHANGELOG.md) when behavior changes.

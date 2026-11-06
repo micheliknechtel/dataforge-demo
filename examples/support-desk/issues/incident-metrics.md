@@ -2,9 +2,10 @@
 The intake artifact for the demo. Create it as a real issue so forge-builder
 Phase 1 reads it the way it will in production:
 
-    gh label create metric-request --color 0E8A16 --force
-    gh issue create --title "Add incident lifecycle metrics" \
-      --body-file examples/support-desk/issues/incident-metrics.md \
+    # Run from examples/support-desk after reviewing this file.
+    node ../../scripts/github.mjs label create metric-request --color 0E8A16 --force
+    node ../../scripts/github.mjs issue create --title "Add incident lifecycle metrics" \
+      --body-file issues/incident-metrics.md \
       --label metric-request
 
 Phase 1 is deliberately built to handle an issue this vague. The grain, the

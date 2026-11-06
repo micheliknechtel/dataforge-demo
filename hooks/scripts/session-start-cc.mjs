@@ -10,8 +10,10 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { resolveWorkspace } from "../../scripts/workspace.mjs";
 
-const workspaceRoot = process.cwd();
+const context = resolveWorkspace();
+const workspaceRoot = context?.projectRoot ?? process.cwd();
 
 const workspaceHash = createHash("sha256")
   .update(workspaceRoot)
@@ -35,17 +37,8 @@ if (!forceRun) {
   }
 }
 
-const candidatePaths = [
-  join(workspaceRoot, "assets", "dataforge.manifest.yaml"),
-  join(workspaceRoot, "dataforge.manifest.yaml"),
-];
-const resolvedPaths = [
-  join(workspaceRoot, "assets", "dataforge.manifest.resolved.yaml"),
-  join(workspaceRoot, "dataforge.manifest.resolved.yaml"),
-];
-
-const hasSeed = candidatePaths.some(existsSync);
-const hasResolved = resolvedPaths.some(existsSync);
+const hasSeed = context !== null;
+const hasResolved = context?.hasResolved ?? false;
 
 if (!hasSeed) {
   process.exit(0);

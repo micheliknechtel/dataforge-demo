@@ -1,6 +1,7 @@
 # Phase 6 Testing and Validation Reference
 
-Loaded at Phase 6 entry. Contains test SQL patterns, quality gate execution procedures, and the lint compliance checklist. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml`.
+Loaded at Phase 6 entry. Contains test SQL, quality gates and lint checks.
+Values come from `context.resolved` per the shared workspace contract.
 
 For the Phase 6 checklist, see [gate-deployment.md](gate-deployment.md).
 

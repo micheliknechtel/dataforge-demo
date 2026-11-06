@@ -22,6 +22,9 @@ venv/
 # Node
 node_modules/
 
+# Isolated official CLI downloads and local validation
+.tools/
+
 # OS
 .DS_Store
 .cursor/

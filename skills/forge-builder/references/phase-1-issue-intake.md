@@ -16,9 +16,14 @@ If `gh` is not authenticated, stop and ask the user to run `gh auth login`. Do n
 
 | Key | Source |
 | :--- | :--- |
-| Repository | `manifest.project.repository`, or the current repo when unset |
+| Repository | `manifest.project.repository`, checked against `context.repository` |
 
-When `manifest.project.repository` is null, every command below omits `--repo` and operates on the repository in the working directory.
+STOP if the repository is missing or differs from `context.repository`.
+Use `node <packageRoot>/scripts/github.mjs check` before the first operation.
+The patterns below explicitly pass `--repo <REPOSITORY>` when using raw `gh`;
+for the rehearsal use the guarded wrapper instead of raw `gh`, omitting
+`--repo` because the wrapper injects it. Never infer a destination from CWD
+or an upstream URL.
 
 ---
 
@@ -27,7 +32,7 @@ When `manifest.project.repository` is null, every command below omits `--repo` a
 ### 1. Retrieve Issue
 
 ```bash
-gh issue view <NUMBER> --json number,title,body,state,author,assignees,labels,comments
+gh issue view <NUMBER> --repo <REPOSITORY> --json number,title,body,state,author,assignees,labels,comments
 ```
 
 Response fields used: `title`, `body`, `state`, `author.login`, `assignees`, `labels`, `comments`.
@@ -35,7 +40,7 @@ Response fields used: `title`, `body`, `state`, `author.login`, `assignees`, `la
 ### 2. Add Comment
 
 ```bash
-gh issue comment <NUMBER> --body-file <PATH>
+gh issue comment <NUMBER> --repo <REPOSITORY> --body-file <PATH>
 ```
 
 Always use `--body-file`, never inline `--body`. Multi-line markdown bodies are mangled by PowerShell quoting rules when passed inline.
@@ -43,12 +48,12 @@ Always use `--body-file`, never inline `--body`. Multi-line markdown bodies are 
 ### 3. Create Issue
 
 ```bash
-gh issue create --title "<title>" --body-file <PATH> --label metric-build
+gh issue create --repo <REPOSITORY> --title "<title>" --body-file <PATH> --label metric-request
 ```
 
 `gh` fails the whole command when a label does not already exist in the
-repository, rather than creating it. Confirm the label with `gh label list`
-first; if it is absent, either create it with `gh label create <name>` or omit
+repository, rather than creating it. Confirm with `gh label list --repo <REPOSITORY>`
+first; if absent, create with `gh label create <name> --repo <REPOSITORY>` or omit
 `--label` entirely. Do not let a missing label abort intake.
 
 Capture the URL from stdout and record it in the memory store.
@@ -58,8 +63,8 @@ Capture the URL from stdout and record it in the memory store.
 GitHub has no sub-task issue type. Represent sub-tasks as a markdown task list in the issue body, or as separate issues referenced from the parent:
 
 ```bash
-gh issue create --title "<title>" --body-file <PATH>
-gh issue comment <PARENT_NUMBER> --body "Tracking: #<CHILD_NUMBER>"
+gh issue create --repo <REPOSITORY> --title "<title>" --body-file <PATH>
+gh issue comment <PARENT_NUMBER> --repo <REPOSITORY> --body-file <TRACKING_PATH>
 ```
 
 ### 5. Link the Pull Request
@@ -69,15 +74,15 @@ Include `Closes #<NUMBER>` in the PR body to link and auto-close on merge. No se
 ### 6. Close the Issue
 
 ```bash
-gh issue close <NUMBER> --comment "<completion note>"
+gh issue close <NUMBER> --repo <REPOSITORY> --comment "<completion note>"
 ```
 
-To reopen after a failed deployment, use `gh issue reopen <NUMBER>`.
+To reopen, use `gh issue reopen <NUMBER> --repo <REPOSITORY>`.
 
 ### 7. Search for Duplicate Issues
 
 ```bash
-gh issue list --search "<tool_name> metric in:title" --state all --limit 10 --json number,title,state
+gh issue list --repo <REPOSITORY> --search "<tool_name> metric in:title" --state all --limit 10 --json number,title,state
 ```
 
 ---
@@ -114,7 +119,9 @@ Every metric build requires these elements. Score each as PRESENT, PARTIAL, or M
 
 ## Spec Challenge Comment Template
 
-Write the body to a temporary file and post it with `gh issue comment <NUMBER> --body-file <PATH>`. The agent fills in the `{...}` placeholders.
+Write the body to a temporary file and post with
+`gh issue comment <NUMBER> --repo <REPOSITORY> --body-file <PATH>`.
+The agent fills in the `{...}` placeholders.
 
 The fill-in template section uses indented text (4 spaces) to avoid nested code fence issues in markdown rendering.
 

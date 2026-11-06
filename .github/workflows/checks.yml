@@ -1,0 +1,35 @@
+name: checks
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Set up the unbuilt synthetic demo
+        run: bash scripts/setup-demo.sh
+      - name: Check skills, hooks and guards
+        run: |
+          node scripts/package.mjs --check
+          node --test scripts/tests/workspace.test.mjs
+          node hooks/scripts/session-start.test.mjs
+          python3 scripts/validate_contracts.py
+          python3 scripts/tests/test_verify.py
+          python3 scripts/tests/test_validate_contracts.py
+          bash scripts/leak_scan.sh
+      - name: Check initial warehouse and Ticket reference
+        run: |
+          export PATH="$PWD/.tools/bin:$PATH"
+          python3 examples/support-desk/seed.py --check --initial
+          python3 scripts/tests/test_demo.py

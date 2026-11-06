@@ -1,6 +1,8 @@
 # Phase 3 Metric Design Reference
 
-Loaded at Phase 3 entry. Contains SQL expression design patterns, join strategy selection, proof-of-concept query procedure, and user approval gate. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml`.
+Loaded at Phase 3 entry. Contains SQL design, joins, proof-of-concept procedures
+and user approval gates. Values come from `context.resolved` per the shared
+workspace contract.
 
 The join pattern decision tree lives in `forge-lint` Section 5 — read that section if it has not been loaded already.
 

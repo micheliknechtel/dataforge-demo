@@ -12,7 +12,7 @@ Data platform CLI orchestration and data exploration for any dataforge project. 
 
 This is the execution primitive every other dataforge skill composes. No other skill calls a platform CLI directly.
 
-**Read on entry:** [reference.md](skills/forge-dbx/reference.md) -- anti-patterns, golden patterns, job parameter templates, CLI command catalog, troubleshooting table.
+**Read on entry:** [reference.md](../../skills/forge-dbx/reference.md) -- anti-patterns, golden patterns, job parameter templates, CLI command catalog, troubleshooting table.
 
 ## Step 0: Detect Shell
 
@@ -34,7 +34,11 @@ Key syntax differences:
 
 ## Step 1: Read Manifest
 
-Read `../../assets/dataforge.manifest.resolved.yaml` (relative to this SKILL.md) to load project-specific configuration. If the resolved manifest does not exist, or if the seed `../../assets/dataforge.manifest.yaml` has a newer modification time, invoke [forge-init](skills/forge-init/SKILL.md) to regenerate it before proceeding. If the seed contains legacy full-manifest keys (e.g., `catalogs`, `domains`), read it directly as a pre-resolved manifest. Extract these sections:
+Read the [workspace contract](../../scripts/workspace.md) and run its resolver.
+Read `context.resolved` for configuration, invoking [forge-init](../../skills/forge-init/SKILL.md)
+if missing or stale against `context.seed`. A legacy full seed can be read
+directly. Run database commands from `context.projectRoot` so relative zone
+paths select existing databases, never newly created empty files. Extract:
 
 ### Zones and Profiles
 
@@ -93,7 +97,7 @@ Use this for CREATE TABLE, ALTER TABLE, CREATE VIEW, or any standalone SQL file 
 
 ### 4a. Discover the Schema Changes Runner Job
 
-Read the job name from `orchestration.jobs.schema_runner.name` in the manifest. Discover the job ID using the [reference.md Job Discovery](skills/forge-dbx/reference.md#job-discovery) pattern for your shell. Record the `job_id` for each zone.
+Read the job name from `orchestration.jobs.schema_runner.name` in the manifest. Discover the job ID using the [reference.md Job Discovery](../../skills/forge-dbx/reference.md#job-discovery) pattern for your shell. Record the `job_id` for each zone.
 
 ### 4b. Analyze the SQL File
 
@@ -118,7 +122,7 @@ STOP: Read the SQL file and confirm which variables it uses before building the 
 
 ### 4c. Build and Send the JSON Payload
 
-Build the payload per [reference.md Schema Changes Runner template](skills/forge-dbx/reference.md#schema-changes-runner) and send using the [reference.md Golden Patterns](skills/forge-dbx/reference.md#golden-patterns----bashzsh-macos-and-linux) for your shell. Record the `run_id`, then proceed to Step 8.
+Build the payload per [reference.md Schema Changes Runner template](../../skills/forge-dbx/reference.md#schema-changes-runner) and send using the [reference.md Golden Patterns](../../skills/forge-dbx/reference.md#golden-patterns----bashzsh-macos-and-linux) for your shell. Record the `run_id`, then proceed to Step 8.
 
 ### 4d. Multi-Zone Dispatch
 
@@ -128,11 +132,11 @@ Repeat steps 4a-4c sequentially per zone. Do not parallelize -- isolate failures
 
 ### 5a. Discover the Pipeline Job
 
-Look up the job name from `orchestration.domain_jobs.<domain>.daily` or `.cumulative` in the manifest. Discover the job ID using the [reference.md Job Discovery](skills/forge-dbx/reference.md#job-discovery) pattern for your shell.
+Look up the job name from `orchestration.domain_jobs.<domain>.daily` or `.cumulative` in the manifest. Discover the job ID using the [reference.md Job Discovery](../../skills/forge-dbx/reference.md#job-discovery) pattern for your shell.
 
 ### 5b. Build and Send the Payload
 
-Build the payload per [reference.md Domain Daily/Cumulative Load Jobs template](skills/forge-dbx/reference.md#domain-dailycumulative-load-jobs) and send using the [reference.md Golden Patterns](skills/forge-dbx/reference.md#golden-patterns----bashzsh-macos-and-linux) for your shell. If `START_DATE` and `END_DATE` are empty strings, the job defaults to yesterday/today. Record `run_id` and proceed to Step 8.
+Build the payload per [reference.md Domain Daily/Cumulative Load Jobs template](../../skills/forge-dbx/reference.md#domain-dailycumulative-load-jobs) and send using the [reference.md Golden Patterns](../../skills/forge-dbx/reference.md#golden-patterns----bashzsh-macos-and-linux) for your shell. If `START_DATE` and `END_DATE` are empty strings, the job defaults to yesterday/today. Record `run_id` and proceed to Step 8.
 
 ### 5c. Spark Configuration Exceptions
 
@@ -142,11 +146,11 @@ Check `spark_conf` in the manifest for domain-specific overrides. If a domain ha
 
 ### 6a. Discover the Ad-hoc Script Runner Job
 
-Search for a job name containing `adhoc_script_runner` using the [reference.md Job Discovery](skills/forge-dbx/reference.md#job-discovery) pattern for your shell.
+Search for a job name containing `adhoc_script_runner` using the [reference.md Job Discovery](../../skills/forge-dbx/reference.md#job-discovery) pattern for your shell.
 
 ### 6b. Build and Send the Payload
 
-Build the payload per [reference.md Ad-hoc Script Runner template](skills/forge-dbx/reference.md#ad-hoc-script-runner) and send using the [reference.md Golden Patterns](skills/forge-dbx/reference.md#golden-patterns----bashzsh-macos-and-linux) for your shell. Record `run_id` and proceed to Step 8.
+Build the payload per [reference.md Ad-hoc Script Runner template](../../skills/forge-dbx/reference.md#ad-hoc-script-runner) and send using the [reference.md Golden Patterns](../../skills/forge-dbx/reference.md#golden-patterns----bashzsh-macos-and-linux) for your shell. Record `run_id` and proceed to Step 8.
 
 ## Step 7: Direct SQL Execution
 
@@ -166,7 +170,7 @@ Before writing or executing any SQL, classify it. Only `metadata`, `aggregate`, 
 | `diagnostic_categorical` | `GROUP BY status_column ORDER BY cnt DESC LIMIT 50` on system-defined types | Allowed with capped result set |
 | `raw_rows` | `SELECT *`, projected row-level IDs, free-text columns without aggregation | Blocked unless break-glass approved |
 
-For break-glass rules see the [Raw Data Egress Policy](README.md#raw-data-egress-policy).
+For break-glass rules see the [Raw Data Egress Policy](../../README.md#raw-data-egress-policy).
 
 ### Query via AI Tools
 
@@ -187,7 +191,7 @@ Resolve catalog names using `catalogs.targets[].pattern` from the manifest with 
 
 ### Query from File
 
-When the SQL is long or contains special characters, write to a temp file first. See [reference.md SQL File Execution](skills/forge-dbx/reference.md#sql-file-execution-via-temp-file) for the shell-specific pattern.
+When the SQL is long or contains special characters, write to a temp file first. See [reference.md SQL File Execution](../../skills/forge-dbx/reference.md#sql-file-execution-via-temp-file) for the shell-specific pattern.
 
 ### Discover Schema
 
@@ -208,7 +212,7 @@ For catalog browsing (list catalogs, schemas, tables, inspect metadata, version 
 
 ## Step 8: Run Monitoring
 
-Monitor runs per [reference.md Run Monitoring](skills/forge-dbx/reference.md#run-monitoring) for your shell.
+Monitor runs per [reference.md Run Monitoring](../../skills/forge-dbx/reference.md#run-monitoring) for your shell.
 
 | `life_cycle_state` | `result_state` | Meaning |
 | :--- | :--- | :--- |
@@ -362,7 +366,7 @@ When `platform.pipeline_framework` in the manifest is set to `dbt`, the followin
 
 **Local execution:** `dbt run --select <model> --profiles-dir <dbt.profiles_dir> --target <dbt.target>` from `dbt.project_dir`.
 
-**Databricks-hosted execution:** Submit dbt commands as job tasks with `dbt_task` type. See [reference.md dbt Task template](skills/forge-dbx/reference.md#dbt-task-when-pipeline_framework--dbt).
+**Databricks-hosted execution:** Submit dbt commands as job tasks with `dbt_task` type. See [reference.md dbt Task template](../../skills/forge-dbx/reference.md#dbt-task-when-pipeline_framework--dbt).
 
 **dbt Cloud API:** If `dbt.cloud_account_id` is present in the manifest, use the API with `$DBT_CLOUD_API_TOKEN` from the environment. When absent, fall back to local or Databricks-hosted execution.
 
@@ -377,7 +381,7 @@ When `platform.pipeline_framework` is `spark_python` but dbt models exist in the
 
 ## Anti-Patterns
 
-See [reference.md](skills/forge-dbx/reference.md) for the full anti-pattern catalog with examples. Key items:
+See [reference.md](../../skills/forge-dbx/reference.md) for the full anti-pattern catalog with examples. Key items:
 
 - Never use `--job-id` flag with `jobs run-now` -- use positional or `--json`
 - Never run `jobs run-now` without explicit parameters

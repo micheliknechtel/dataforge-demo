@@ -1,6 +1,8 @@
 # Phase 1 Intake Reference
 
-Loaded at Phase 1 entry. Contains all intake mode procedures, the Universal Hypothesis Boundary, and the Scoping Decision Tree. All project-specific values are resolved from `../../../assets/dataforge.manifest.resolved.yaml` (or `../../../assets/dataforge.manifest.yaml` if it contains legacy full-manifest keys).
+Loaded at Phase 1 entry. Contains intake procedures and scoping rules.
+All project-specific values come from `context.resolved` (or the selected
+legacy full `context.seed`) per the shared workspace contract.
 
 ---
 
